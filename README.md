@@ -2,6 +2,8 @@
 
 Streamlit app to inspect Teleplot-style device logs in the format:
 
+Live app: https://locationdisplay.streamlit.app/
+
 `HH:MM:SS.mmm >metric:value`
 
 Example:
