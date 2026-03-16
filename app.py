@@ -51,7 +51,7 @@ with left_col:
     if metric_table.empty:
         st.warning("No numeric metrics found.")
     else:
-        st.dataframe(metric_table, use_container_width=True, hide_index=True)
+        st.dataframe(metric_table, width="stretch", hide_index=True)
 
 with right_col:
     # Resolve any previously selected time-series point so the map can show it.
@@ -72,7 +72,7 @@ with right_col:
     if map_figure is None:
         st.warning("No valid latitude/longitude data found for map rendering.")
     else:
-        st.plotly_chart(map_figure, use_container_width=True)
+        st.plotly_chart(map_figure, width="stretch")
 
     st.subheader("Time-Series")
     available_metrics = [
@@ -92,7 +92,7 @@ with right_col:
         else:
             st.plotly_chart(
                 ts_figure,
-                use_container_width=True,
+                width="stretch",
                 on_select="rerun",
                 key="ts_chart",
             )
