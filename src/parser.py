@@ -22,8 +22,12 @@ class ParseResult:
     invalid_lines: List[int]
 
 
-def parse_log_text(log_text: str) -> ParseResult:
-    """Parse log text into long and wide dataframes."""
+def parse_log_text(log_text: str, source_filename: str | None = None) -> ParseResult:
+    """Parse log text into long and wide dataframes.
+
+    If *source_filename* contains a date pattern like YYYY-MM-DD or YYYYMMDD,
+    that date is used as the day component for parsed timestamps.
+    """
     records = []
     invalid_lines: List[int] = []
 
@@ -73,9 +77,19 @@ def parse_log_text(log_text: str) -> ParseResult:
             invalid_lines=invalid_lines,
         )
 
-    # Use today's date and parsed time-of-day so points can be charted on a datetime axis.
-    today = pd.Timestamp.today().normalize()
-    long_df["timestamp"] = today + pd.to_timedelta(long_df["timestamp_text"], errors="coerce")
+    # Use filename date when available, otherwise fall back to today's date.
+    day = None
+    date_match = re.search(r"(\d{4})-?(\d{2})-?(\d{2})", source_filename or "")
+    if date_match:
+        try:
+            day = pd.Timestamp(f"{date_match.group(1)}-{date_match.group(2)}-{date_match.group(3)}").normalize()
+        except Exception:
+            pass
+
+    if day is None:
+        day = pd.Timestamp.today().normalize()
+
+    long_df["timestamp"] = day + pd.to_timedelta(long_df["timestamp_text"], errors="coerce")
 
     wide_df = (
         long_df.pivot_table(index="timestamp", columns="metric", values="value_num", aggfunc="last")

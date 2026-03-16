@@ -37,3 +37,14 @@ def test_parse_ignores_invalid_lines():
     assert result.total_lines == 4
     assert result.parsed_lines == 2
     assert result.invalid_lines == [1, 4]
+
+
+def test_parse_uses_date_from_source_filename():
+    text = "11:43:51.902 >latitude:20.706118"
+
+    result = parse_log_text(text, source_filename="trip_2026-03-15.log")
+
+    ts = result.long_df.iloc[0]["timestamp"]
+    assert ts.year == 2026
+    assert ts.month == 3
+    assert ts.day == 15

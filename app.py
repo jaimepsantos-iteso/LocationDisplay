@@ -23,7 +23,7 @@ if uploaded_file is None:
     st.stop()
 
 raw_text = uploaded_file.getvalue().decode("utf-8", errors="ignore")
-result = parse_log_text(raw_text)
+result = parse_log_text(raw_text, source_filename=uploaded_file.name)
 
 left_col, right_col = st.columns([1, 3], gap="large")
 
