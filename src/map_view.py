@@ -9,6 +9,8 @@ import plotly.graph_objects as go
 
 from .schema import LATITUDE_KEYS, LONGITUDE_KEYS
 
+_HIGHLIGHT_COLOR = "#4FD346"  # green
+
 
 def _find_coordinate_columns(df: pd.DataFrame) -> Tuple[Optional[str], Optional[str]]:
     lat_col = next((key for key in LATITUDE_KEYS if key in df.columns), None)
@@ -16,8 +18,16 @@ def _find_coordinate_columns(df: pd.DataFrame) -> Tuple[Optional[str], Optional[
     return lat_col, lon_col
 
 
-def build_track_map_figure(wide_df: pd.DataFrame) -> Optional[go.Figure]:
-    """Build an OpenStreetMap track figure from wide GNSS data."""
+def build_track_map_figure(
+    wide_df: pd.DataFrame,
+    highlight_ts: Optional[pd.Timestamp] = None,
+) -> Optional[go.Figure]:
+    """Build an OpenStreetMap track figure from wide GNSS data.
+
+    If *highlight_ts* is given, the coordinate row nearest to that timestamp
+    is marked with a green pin so it can be cross-referenced with the
+    time-series chart.
+    """
     lat_col, lon_col = _find_coordinate_columns(wide_df)
     if not lat_col or not lon_col:
         return None
@@ -49,6 +59,21 @@ def build_track_map_figure(wide_df: pd.DataFrame) -> Optional[go.Figure]:
             name="Latest",
         )
     )
+
+    if highlight_ts is not None:
+        idx = (track["timestamp"] - highlight_ts).abs().idxmin()
+        row = track.loc[idx]
+        fig.add_trace(
+            go.Scattermapbox(
+                lat=[float(row[lat_col])],
+                lon=[float(row[lon_col])],
+                mode="markers",
+                marker={"size": 16, "color": _HIGHLIGHT_COLOR},
+                name="Selected",
+            )
+        )
+        center_lat = float(row[lat_col])
+        center_lon = float(row[lon_col])
 
     fig.update_layout(
         mapbox={

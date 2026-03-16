@@ -23,7 +23,8 @@ def build_time_series_figure(wide_df: pd.DataFrame, metrics: Iterable[str]) -> O
             go.Scatter(
                 x=series["timestamp"],
                 y=series[metric],
-                mode="lines",
+                mode="lines+markers",
+                marker={"size": 4},
                 name=metric,
             )
         )

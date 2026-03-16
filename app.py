@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pandas as pd
 import streamlit as st
 
 from src.charts import build_time_series_figure
@@ -53,8 +54,21 @@ with left_col:
         st.dataframe(metric_table, use_container_width=True, hide_index=True)
 
 with right_col:
+    # Resolve any previously selected time-series point so the map can show it.
+    highlight_ts = None
+    ts_state = st.session_state.get("ts_chart")
+    if ts_state is not None:
+        pts = getattr(getattr(ts_state, "selection", None), "points", None) or []
+        if pts:
+            raw_x = pts[0].get("x")
+            if raw_x:
+                try:
+                    highlight_ts = pd.Timestamp(raw_x)
+                except Exception:
+                    pass
+
     st.subheader("OpenStreetMap Track")
-    map_figure = build_track_map_figure(result.wide_df)
+    map_figure = build_track_map_figure(result.wide_df, highlight_ts=highlight_ts)
     if map_figure is None:
         st.warning("No valid latitude/longitude data found for map rendering.")
     else:
@@ -76,6 +90,11 @@ with right_col:
         if ts_figure is None:
             st.warning("Selected metrics do not have plottable points.")
         else:
-            st.plotly_chart(ts_figure, use_container_width=True)
+            st.plotly_chart(
+                ts_figure,
+                use_container_width=True,
+                on_select="rerun",
+                key="ts_chart",
+            )
     else:
         st.info("Select one or more metrics to draw charts.")
