@@ -56,16 +56,26 @@ with left_col:
 with right_col:
     # Resolve any previously selected time-series point so the map can show it.
     highlight_ts = None
-    ts_state = st.session_state.get("ts_chart")
-    if ts_state is not None:
+    chart_state_keys = [
+        key
+        for key in st.session_state.keys()
+        if key == "ts_chart_combined" or key.startswith("ts_chart_")
+    ]
+    for state_key in chart_state_keys:
+        ts_state = st.session_state.get(state_key)
+        if ts_state is None:
+            continue
         pts = getattr(getattr(ts_state, "selection", None), "points", None) or []
-        if pts:
-            raw_x = pts[0].get("x")
-            if raw_x:
-                try:
-                    highlight_ts = pd.Timestamp(raw_x)
-                except Exception:
-                    pass
+        if not pts:
+            continue
+        raw_x = pts[0].get("x")
+        if not raw_x:
+            continue
+        try:
+            highlight_ts = pd.Timestamp(raw_x)
+            break
+        except Exception:
+            continue
 
     st.subheader("OpenStreetMap Track")
     map_figure = build_track_map_figure(result.wide_df, highlight_ts=highlight_ts)
@@ -84,17 +94,34 @@ with right_col:
         options=available_metrics,
         default=default_metrics,
     )
+    combine_metrics = st.checkbox(
+        "Show all selected metrics in one chart",
+        value=True,
+    )
 
     if selected_metrics:
-        ts_figure = build_time_series_figure(result.wide_df, selected_metrics)
-        if ts_figure is None:
-            st.warning("Selected metrics do not have plottable points.")
+        if combine_metrics:
+            ts_figure = build_time_series_figure(result.wide_df, selected_metrics)
+            if ts_figure is None:
+                st.warning("Selected metrics do not have plottable points.")
+            else:
+                st.plotly_chart(
+                    ts_figure,
+                    width="stretch",
+                    on_select="rerun",
+                    key="ts_chart_combined",
+                )
         else:
-            st.plotly_chart(
-                ts_figure,
-                width="stretch",
-                on_select="rerun",
-                key="ts_chart",
-            )
+            for metric in selected_metrics:
+                metric_figure = build_time_series_figure(result.wide_df, [metric])
+                if metric_figure is None:
+                    continue
+                metric_figure.update_layout(yaxis_title=metric, title=metric)
+                st.plotly_chart(
+                    metric_figure,
+                    width="stretch",
+                    on_select="rerun",
+                    key=f"ts_chart_{metric}",
+                )
     else:
         st.info("Select one or more metrics to draw charts.")
