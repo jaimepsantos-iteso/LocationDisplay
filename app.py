@@ -10,8 +10,8 @@ from src.schema import EXPECTED_METRICS
 from src.stats import compute_dataset_stats, compute_metric_table
 
 
-st.set_page_config(page_title="LocationDisplay", layout="wide")
-st.title("LocationDisplay")
+st.set_page_config(page_title="Location Display", page_icon="📍", layout="wide")
+st.title("📍 Location Display")
 st.caption("Upload Teleplot-like logs and inspect map + metrics.")
 
 uploaded_file = st.file_uploader("Choose a log file", type=["log", "txt"])
