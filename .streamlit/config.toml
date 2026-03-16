@@ -1,0 +1,4 @@
+[server]
+# Increase limits to reduce mobile upload failures on slower or unstable connections.
+maxUploadSize = 400
+maxMessageSize = 400
