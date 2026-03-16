@@ -35,14 +35,14 @@ def compute_dataset_stats(long_df: pd.DataFrame, wide_df: pd.DataFrame) -> Dict[
 def compute_metric_table(long_df: pd.DataFrame) -> pd.DataFrame:
     """Return per-metric summary stats for numeric values."""
     if long_df.empty:
-        return pd.DataFrame(columns=["metric", "count", "min", "max", "mean", "last"])
+        return pd.DataFrame(columns=["metric", "count", "min", "max", "mean", "std", "last"])
 
     numeric = long_df.dropna(subset=["value_num"])
     if numeric.empty:
-        return pd.DataFrame(columns=["metric", "count", "min", "max", "mean", "last"])
+        return pd.DataFrame(columns=["metric", "count", "min", "max", "mean", "std", "last"])
 
     grouped = numeric.groupby("metric", as_index=False)["value_num"]
-    summary = grouped.agg(count="count", min="min", max="max", mean="mean")
+    summary = grouped.agg(count="count", min="min", max="max", mean="mean", std="std")
 
     last_values = (
         numeric.sort_values("timestamp")
