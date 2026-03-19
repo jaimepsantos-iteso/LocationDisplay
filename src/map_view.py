@@ -15,7 +15,16 @@ _HIGHLIGHT_COLOR = "#4FD346"  # green
 def _find_coordinate_columns(df: pd.DataFrame) -> Tuple[Optional[str], Optional[str]]:
     lat_col = next((key for key in LATITUDE_KEYS if key in df.columns), None)
     lon_col = next((key for key in LONGITUDE_KEYS if key in df.columns), None)
+
     return lat_col, lon_col
+
+
+def _normalize_coordinate_series(series: pd.Series, abs_limit: float) -> pd.Series:
+    """Normalize E7 coordinates to decimal degrees for out-of-range values."""
+    numeric = pd.to_numeric(series, errors="coerce")
+    out_of_range = (numeric > abs_limit) | (numeric < -abs_limit)
+    numeric.loc[out_of_range] = numeric.loc[out_of_range] / 1e7
+    return numeric
 
 
 def build_track_map_figure(
@@ -33,6 +42,9 @@ def build_track_map_figure(
         return None
 
     track = wide_df.dropna(subset=[lat_col, lon_col]).copy()
+    track[lat_col] = _normalize_coordinate_series(track[lat_col], abs_limit=90)
+    track[lon_col] = _normalize_coordinate_series(track[lon_col], abs_limit=180)
+    track = track.dropna(subset=[lat_col, lon_col])
     if track.empty:
         return None
 

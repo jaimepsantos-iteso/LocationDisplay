@@ -12,7 +12,7 @@ EXPECTED_METRICS = [
     "gnss_time_raw",
 ]
 
-LATITUDE_KEYS = ("latitude", "lat")
-LONGITUDE_KEYS = ("longitude", "lon", "lng")
+LATITUDE_KEYS = ("latitude", "lat", "GNSS_Latitude")
+LONGITUDE_KEYS = ("longitude", "lon", "lng", "GNSS_Longitude")
 
 REQUIRED_MAP_KEYS = ("latitude", "longitude")

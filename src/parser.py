@@ -8,9 +8,27 @@ from typing import List
 
 import pandas as pd
 
+from .schema import LATITUDE_KEYS, LONGITUDE_KEYS
+
 LINE_PATTERN = re.compile(
     r"^\s*(?P<ts>\d{2}:\d{2}:\d{2}\.\d{3})\s*>\s*(?P<metric>[A-Za-z0-9_]+)\s*:\s*(?P<value>.+?)\s*$"
 )
+
+_LATITUDE_KEY_SET = {key.lower() for key in LATITUDE_KEYS}
+_LONGITUDE_KEY_SET = {key.lower() for key in LONGITUDE_KEYS}
+
+
+def _normalize_coordinate_value(metric: str, value_num: float) -> float:
+    """Normalize E7 GNSS coordinates to decimal degrees when needed."""
+    if pd.isna(value_num):
+        return value_num
+
+    metric_key = metric.lower()
+    if metric_key in _LATITUDE_KEY_SET and (value_num > 90 or value_num < -90):
+        return value_num / 1e7
+    if metric_key in _LONGITUDE_KEY_SET and (value_num > 180 or value_num < -180):
+        return value_num / 1e7
+    return value_num
 
 
 @dataclass
@@ -48,6 +66,7 @@ def parse_log_text(log_text: str, source_filename: str | None = None) -> ParseRe
         value_raw = match.group("value").strip()
 
         value_num = pd.to_numeric(value_raw, errors="coerce")
+        value_num = _normalize_coordinate_value(metric, value_num)
         records.append(
             {
                 "line_number": line_number,
