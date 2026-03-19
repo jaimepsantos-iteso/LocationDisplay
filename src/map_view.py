@@ -27,6 +27,43 @@ def _normalize_coordinate_series(series: pd.Series, abs_limit: float) -> pd.Seri
     return numeric
 
 
+def _zoom_for_span(span: float) -> int:
+    """Estimate a map zoom level that keeps the whole path in view."""
+    if span < 0.0005:
+        return 18
+    if span < 0.001:
+        return 17
+    if span < 0.002:
+        return 16
+    if span < 0.005:
+        return 15
+    if span < 0.01:
+        return 14
+    if span < 0.02:
+        return 13
+    if span < 0.05:
+        return 12
+    if span < 0.1:
+        return 11
+    if span < 0.2:
+        return 10
+    if span < 0.5:
+        return 9
+    if span < 1:
+        return 8
+    if span < 2:
+        return 7
+    if span < 5:
+        return 6
+    if span < 10:
+        return 5
+    if span < 20:
+        return 4
+    if span < 40:
+        return 3
+    return 2
+
+
 def build_track_map_figure(
     wide_df: pd.DataFrame,
     highlight_ts: Optional[pd.Timestamp] = None,
@@ -49,8 +86,15 @@ def build_track_map_figure(
         return None
 
     last_row = track.iloc[-1]
-    center_lat = float(last_row[lat_col])
-    center_lon = float(last_row[lon_col])
+    last_lat = float(last_row[lat_col])
+    last_lon = float(last_row[lon_col])
+    lat_min = float(track[lat_col].min())
+    lat_max = float(track[lat_col].max())
+    lon_min = float(track[lon_col].min())
+    lon_max = float(track[lon_col].max())
+    center_lat = (lat_min + lat_max) / 2
+    center_lon = (lon_min + lon_max) / 2
+    zoom = _zoom_for_span(max(lat_max - lat_min, lon_max - lon_min))
 
     fig = go.Figure()
     fig.add_trace(
@@ -64,8 +108,8 @@ def build_track_map_figure(
     )
     fig.add_trace(
         go.Scattermapbox(
-            lat=[center_lat],
-            lon=[center_lon],
+            lat=[last_lat],
+            lon=[last_lon],
             mode="markers",
             marker={"size": 12, "color": "red"},
             name="Latest",
@@ -86,11 +130,12 @@ def build_track_map_figure(
         )
         center_lat = float(row[lat_col])
         center_lon = float(row[lon_col])
+        zoom = 15
 
     fig.update_layout(
         mapbox={
             "style": "open-street-map",
-            "zoom": 15,
+            "zoom": zoom,
             "center": {"lat": center_lat, "lon": center_lon},
         },
         margin={"l": 0, "r": 0, "t": 0, "b": 0},
