@@ -10,6 +10,7 @@ import plotly.graph_objects as go
 from .schema import LATITUDE_KEYS, LONGITUDE_KEYS
 
 _HIGHLIGHT_COLOR = "#4FD346"  # green
+_MAX_ZOOM = 18
 
 
 def _find_coordinate_columns(df: pd.DataFrame) -> Tuple[Optional[str], Optional[str]]:
@@ -85,6 +86,9 @@ def build_track_map_figure(
     if track.empty:
         return None
 
+    first_row = track.iloc[0]
+    first_lat = float(first_row[lat_col])
+    first_lon = float(first_row[lon_col])
     last_row = track.iloc[-1]
     last_lat = float(last_row[lat_col])
     last_lon = float(last_row[lon_col])
@@ -94,7 +98,8 @@ def build_track_map_figure(
     lon_max = float(track[lon_col].max())
     center_lat = (lat_min + lat_max) / 2
     center_lon = (lon_min + lon_max) / 2
-    zoom = _zoom_for_span(max(lat_max - lat_min, lon_max - lon_min))
+    # Bias one level tighter so the path occupies more of the viewport.
+    zoom = min(_MAX_ZOOM, _zoom_for_span(max(lat_max - lat_min, lon_max - lon_min)) + 1)
 
     fig = go.Figure()
     fig.add_trace(
@@ -108,11 +113,20 @@ def build_track_map_figure(
     )
     fig.add_trace(
         go.Scattermapbox(
+            lat=[first_lat],
+            lon=[first_lon],
+            mode="markers",
+            marker={"size": 12, "color": "blue"},
+            name="Start",
+        )
+    )
+    fig.add_trace(
+        go.Scattermapbox(
             lat=[last_lat],
             lon=[last_lon],
             mode="markers",
             marker={"size": 12, "color": "red"},
-            name="Latest",
+            name="Finish",
         )
     )
 
