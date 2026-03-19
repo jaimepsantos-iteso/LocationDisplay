@@ -48,3 +48,18 @@ def test_parse_uses_date_from_source_filename():
     assert ts.year == 2026
     assert ts.month == 3
     assert ts.day == 15
+
+
+def test_parse_normalizes_e7_coordinates_to_degrees():
+    text = "\n".join(
+        [
+            "11:43:51.902 >latitude:207061180",
+            "11:43:51.902 >longitude:-1033370130",
+        ]
+    )
+
+    result = parse_log_text(text)
+
+    row = result.wide_df.iloc[0]
+    assert abs(row["latitude"] - 20.706118) < 1e-9
+    assert abs(row["longitude"] + 103.337013) < 1e-9
